@@ -69,16 +69,15 @@ await liff.init({
     document.getElementById('checkin-btn').innerText = '簽到中...';
 
     try {
-        // 使用 URLSearchParams 格式傳送，這種格式在手機瀏覽器的相容性最高，最不容易被安全機制阻擋
+        // ⭕ 關鍵修改：改用 URLSearchParams 封裝資料，對齊後端的 e.parameter
         const formData = new URLSearchParams();
         formData.append('userId', userId);
         formData.append('name', displayName);
 
         const response = await fetch(gasUrl, {
             method: 'POST',
-            method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded' // 告訴 GAS 這是表單資料
             },
             body: formData.toString()
         });
@@ -86,13 +85,14 @@ await liff.init({
         const result = await response.json();
         if (result.status === 'success') {
             alert('🎉 簽到成功！');
-            liff.closeWindow();
+            liff.closeWindow(); // 成功後關閉視窗
         } else {
             alert('簽到失敗：' + result.message);
             resetButton();
         }
     } catch (error) {
-        alert('網路錯誤：' + error.message);
+        // 如果還是噴網路錯誤，這行會把真正的原因抓出來
+        alert('發送失敗原因：' + error.message);
         resetButton();
     }
 }
