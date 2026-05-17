@@ -35,8 +35,11 @@
                     return;
                 }
 
-                // 執行初始化
-                await liff.init({ liffId: liffId });
+                // 修正後的寫法
+await liff.init({ 
+    liffId: liffId,
+    withLoginOnResponse: true // 關鍵：強迫自動處理登入回應，防範 code_verifier 錯誤
+});
                 
                 if (!liff.isLoggedIn()) {
                     liff.login();
