@@ -1,2 +1,100 @@
-const liffId = '2010103818-559ZrQFC'; // 確保這裡填對
-const gasUrl = 'https://script.google.com/macros/s/AKfycbw-T6TNfuaPiQRbnSf6ET4fTeH6mEgu9IGN4ylS6C529-mdGMOPtvIIylkGwiCK9lEW/exec'; // 填入剛剛步驟1的純後端網址
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活動線上簽到</title>
+    <script src="https://static.line-scdn.net/liff/edge/versions/2.21.4/sdk.js"></script>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
+        <h2>歡迎參加活動！</h2>
+        
+        <div id="user-info" style="display:none;">
+            <img id="user-avatar" src="" width="100" style="border-radius: 50%; border: 2px solid #06C755;"><br>
+            <p style="font-size: 18px; margin: 15px 0;">你好，<strong id="user-name"></strong>！</p>
+            <button id="checkin-btn" style="background-color: #06C755; color: white; border: none; padding: 12px 30px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold;">確認簽到</button>
+        </div>
+        
+        <p id="status" style="color: #666;">正在初始化系統...</p>
+    </div>
+
+    <script>
+        // 🔒 你的專屬設定資料（已安全放入 script 標籤內）
+        const liffId = '2010103818-559ZrQFC'; 
+        const gasUrl = 'https://script.google.com/macros/s/AKfycbw-T6TNfuaPiQRbnSf6ET4fTeH6mEgu9IGN4ylS6C529-mdGMOPtvIIylkGwiCK9lEW/exec'; 
+
+        function updateStatus(msg) {
+            document.getElementById('status').innerText = msg;
+        }
+
+        async function initLIFF() {
+            try {
+                if (typeof liff === 'undefined') {
+                    updateStatus('SDK 載入失敗，請重新整理');
+                    return;
+                }
+
+                // 執行初始化
+                await liff.init({ liffId: liffId });
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
+                    const profile = await liff.getProfile();
+                    showUserInfo(profile);
+                }
+            } catch (error) {
+                updateStatus('初始化失敗: ' + error.message);
+            }
+        }
+
+        function showUserInfo(profile) {
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('user-info').style.display = 'block';
+            document.getElementById('user-name').innerText = profile.displayName;
+            document.getElementById('user-avatar').src = profile.pictureUrl;
+
+            document.getElementById('checkin-btn').onclick = () => {
+                sendCheckInData(profile.userId, profile.displayName);
+            };
+        }
+
+        async function sendCheckInData(userId, displayName) {
+            document.getElementById('checkin-btn').disabled = true;
+            document.getElementById('checkin-btn').style.backgroundColor = '#ccc';
+            document.getElementById('checkin-btn').innerText = '簽到中...';
+
+            try {
+                const response = await fetch(gasUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ userId: userId, name: displayName })
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('🎉 簽到成功！');
+                    liff.closeWindow();
+                } else {
+                    alert('簽到失敗：' + result.message);
+                    resetButton();
+                }
+            } catch (error) {
+                alert('網路錯誤：' + error.message);
+                resetButton();
+            }
+        }
+
+        function resetButton() {
+            document.getElementById('checkin-btn').disabled = false;
+            document.getElementById('checkin-btn').style.backgroundColor = '#06C755';
+            document.getElementById('checkin-btn').innerText = '確認簽到';
+        }
+
+        // 確保網頁載入後啟動
+        window.onload = function() {
+            initLIFF();
+        };
+    </script>
+</body>
+</html>
